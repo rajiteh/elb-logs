@@ -52,8 +52,9 @@ def cli(state, profile, region, access_key, secret_key):
 @click.option('--time-prefix', required=True)
 @click.option('--elb', required=True)
 @click.option('--output-dir', default=os.getcwd())
+@click.option('--prefix', default="")
 @pass_state
-def download(state, bucket, time_prefix, elb, output_dir):
+def download(state, bucket, time_prefix, elb, output_dir, prefix):
 
     if not state.region:
         raise click.ClickException('--region is required for download')
@@ -65,13 +66,18 @@ def download(state, bucket, time_prefix, elb, output_dir):
         raise click.ClickException('time_prefix argument should be formatted like: 20150121T01...')
 
     time_path = '{year}/{month}/{day}'.format(**time_match.groupdict())
-    s3prefix_format = ('AWSLogs/{account}/elasticloadbalancing/{region}/{time_path}/'
+    
+    if prefix:
+      prefix = "{}/".format(prefix)
+        
+    s3prefix_format = ('{prefix}AWSLogs/{account}/elasticloadbalancing/{region}/{time_path}/'
                        '{account}_elasticloadbalancing_{region}_{elb}_{time_prefix}')
     s3prefix = s3prefix_format.format(time_path=time_path,
                                       elb=elb,
                                       time_prefix=time_prefix,
                                       account=account,
-                                      region=state.region)
+                                      region=state.region,
+                                      prefix=prefix)
     s3client = boto3.client('s3')
     s3 = boto3.resource('s3')
     s3bucket = s3.Bucket(bucket)
